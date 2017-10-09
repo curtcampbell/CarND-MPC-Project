@@ -44,7 +44,8 @@ double polyeval(Eigen::VectorXd coeffs, double x) {
 // Fit a polynomial.
 // Adapted from
 // https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
+Eigen::VectorXd polyfit(Eigen::VectorXd xvals,
+                        Eigen::VectorXd yvals,
                         int order) {
   assert(xvals.size() == yvals.size());
   assert(order >= 1 && order <= xvals.size() - 1);
@@ -69,7 +70,7 @@ int main() {
   uWS::Hub h;
 
   // MPC is initialized here!
-  MPC mpc;
+  MPC mpc(10);
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -85,12 +86,25 @@ int main() {
         string event = j[0].get<string>();
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          vector<double> ptsx = j[1]["ptsx"];
-          vector<double> ptsy = j[1]["ptsy"];
+
+          vector<double> waypoints_x = j[1]["ptsx"];
+          vector<double> waypoints_y = j[1]["ptsy"];
           double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+
+          //Curve fit a 3rd polynomial to the way points.
+
+          Eigen::VectorXd xVals(waypoints_x.size());
+          Eigen::VectorXd yVals(waypoints_y.size());
+          for(size_t i=0, size=waypoints_x.size(); i<size; ++i) {
+            xVals[i] = waypoints_x[i];
+            yVals[i] = waypoints_y[i];
+          }
+
+          TCoeffVector coeff = polyfit(xVals, yVals, 3);
+
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -98,8 +112,14 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+          TStateVector state;
+          state << px, py, psi, v;
+
+          auto result = mpc.Solve(state, coeff);
+
+          double steer_value = result.GetSteerAngle(2);
+          double throttle_value = result.GetThrottle(2);
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.

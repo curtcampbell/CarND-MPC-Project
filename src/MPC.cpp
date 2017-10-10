@@ -29,14 +29,30 @@ double ref_v = 40;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-
-AD<double> poly_eval(const TCoeffVector& coeffs, AD<double> x){
-  AD<double> result = 0.0;
-  for (int i = 0; i < coeffs.SizeAtCompileTime; i++) {
-    result += coeffs[i] * pow(x, i);
+double deriv(const TCoeffVector& coeffs, double x) {
+  double result = 0.0;
+  for (int i = 1; i < coeffs.SizeAtCompileTime; i++) {
+    result += coeffs[i]* i * std::pow(x, i-1);
   }
   return result;
 }
+
+double poly_eval(const TCoeffVector& coeffs, double x){
+  double result = 0.0;
+  for (int i = 0; i < coeffs.SizeAtCompileTime; i++) {
+    result += coeffs[i] * std::pow(x, i);
+  }
+  return result;
+}
+
+CppAD::AD<double> poly_eval(const TCoeffVector& coeffs, CppAD::AD<double> x){
+  CppAD::AD<double> result = 0.0;
+  for (int i = 0; i < coeffs.SizeAtCompileTime; i++) {
+    result += coeffs[i] * CppAD::pow(x, i);
+  }
+  return result;
+}
+
 
 
 class FG_eval {

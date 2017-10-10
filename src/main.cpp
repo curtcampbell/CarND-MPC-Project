@@ -32,14 +32,6 @@ string hasData(string s) {
   return "";
 }
 
-// Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x) {
-  double result = 0.0;
-  for (int i = 0; i < coeffs.size(); i++) {
-    result += coeffs[i] * pow(x, i);
-  }
-  return result;
-}
 
 // Fit a polynomial.
 // Adapted from
@@ -100,6 +92,7 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+
           //Curve fit a 3rd polynomial to the way points.
 
           Eigen::VectorXd xVals(waypoints_x.size());
@@ -110,7 +103,9 @@ int main() {
           }
 
           TCoeffVector coeff = polyfit(xVals, yVals, 3);
-
+          double cte = poly_eval(coeff, px) - py;
+          double yprime = deriv(coeff, px);
+          double epsi = atan(yprime);
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -120,7 +115,7 @@ int main() {
           */
 
           TStateVector state;
-          state << px, py, psi, v;
+          state << px, py, psi, v, cte, epsi;
 
           auto result = mpc.Solve(state, coeff);
 

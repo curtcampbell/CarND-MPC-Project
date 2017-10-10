@@ -42,6 +42,12 @@ struct VariableOffsets {
 };
 
 
+double deriv(const TCoeffVector& coeffs, double x);
+
+double poly_eval(const TCoeffVector& coeffs, double x);
+CppAD::AD<double> poly_eval(const TCoeffVector& coeffs, CppAD::AD<double> x);
+
+
 class MPC_Solution{
 public:
   typedef CppAD::ipopt::solve_result<TDvector> TIpOptSolution;

@@ -8,26 +8,9 @@ using CppAD::AD;
 
 //Define some constants in our system.
 
-////number of timesteps
-const size_t N = 20;
-//Duration of eath timestep
-const double dt = 0.05;
-
 const size_t num_actuators = 2;
 const size_t num_constraints = 6;
 
-
-// The solver takes all the state variables and actuator
-// variables in a singular vector. Thus, we should to establish
-// when one variable starts and another ends to make our lifes easier.
-size_t x_offset = 0;
-size_t y_offset = x_offset + N;
-size_t psi_offset = y_offset + N;
-size_t v_offset = psi_offset + N;
-size_t cte_offset = v_offset + N;
-size_t eps_offset = cte_offset + N;
-size_t delta_offset = eps_offset + N;
-size_t a_offset = delta_offset + N - 1;
 
 // NOTE: feel free to play around with this
 // or do something completely different
@@ -60,86 +43,86 @@ class FG_eval {
  public:
   // Fitted polynomial coefficients
   TCoeffVector coeffs;
-  FG_eval(TCoeffVector coeffs):
-    coeffs(coeffs)
-  {
+  const VariableOffsets& offsets_;
+  const size_t num_steps_;
+  const double dt_;
 
+  FG_eval(TCoeffVector coeffs,
+          const VariableOffsets& offsets,
+          size_t num_steps,
+          double dt):
+    coeffs(coeffs),
+    offsets_(offsets),
+    num_steps_(num_steps),
+    dt_(dt)
+  {
   }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars){
 
-    // TODO: implement MPC
-    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
+    // `fg` is a vector of the cost constraints,
+    // `vars` is a vector of variable values (state & actuators)
 
 	  using namespace CppAD;
 
   	// The cost is stored is the first element of `fg`.
-    // Any additions to the cost should be added to `fg[0]`.
+    // Any additions to the cost are added to `fg[0]`.
     fg[0] = 0;
 
     // Reference State Cost
-    // TODO: Define the cost related the reference state and
-    // any anything you think may be beneficial.
-
     //Cost with respect to the reference state
-    for (size_t t = 0; t < N; ++t) {
-      fg[0] += pow(vars[cte_offset + t], 2);
-      fg[0] += pow(vars[eps_offset + t], 2);
-      fg[0] += pow(vars[v_offset + t] - ref_v, 2);
+    for (size_t t = 0; t < num_steps_; ++t) {
+      fg[0] += pow(vars[offsets_.cte_offset + t], 2);
+      fg[0] += pow(vars[offsets_.eps_offset + t], 2);
+      fg[0] += pow(vars[offsets_.v_offset + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
-    for (size_t t = 0; t < N - 1; ++t) {
-      fg[0] += pow(vars[delta_offset + t], 2);
-      fg[0] += pow(vars[a_offset + t], 2);
+    for (size_t t = 0; t < num_steps_ - 1; ++t) {
+      fg[0] += pow(vars[offsets_.delta_offset + t], 2);
+      fg[0] += pow(vars[offsets_.a_offset + t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
-    for (size_t t = 0; t < N - 2; ++t) {
-      fg[0] += pow(vars[delta_offset + t + 1] - vars[delta_offset + t], 2);
-      fg[0] += pow(vars[a_offset + t + 1] - vars[a_offset + t], 2);
+    for (size_t t = 0; t < num_steps_ - 2; ++t) {
+      fg[0] += pow(vars[offsets_.delta_offset + t + 1] - vars[offsets_.delta_offset + t], 2);
+      fg[0] += pow(vars[offsets_.a_offset + t + 1] - vars[offsets_.a_offset + t], 2);
     }
-    //
-    // Setup Constraints
-    //
-    // NOTE: In this section you'll setup the model constraints.
 
-    // Initial constraints
+    // Model constraints.
     //
     // We add 1 to each of the starting indices due to cost being located at
     // index 0 of `fg`.
     // This bumps up the position of all the other values.
-    fg[1 + x_offset] = vars[x_offset];
-    fg[1 + y_offset] = vars[y_offset];
-    fg[1 + psi_offset] = vars[psi_offset];
-    fg[1 + v_offset] = vars[v_offset];
-    fg[1 + cte_offset] = vars[cte_offset];
-    fg[1 + eps_offset] = vars[eps_offset];
+    fg[1 + offsets_.x_offset] = vars[offsets_.x_offset];
+    fg[1 + offsets_.y_offset] = vars[offsets_.y_offset];
+    fg[1 + offsets_.psi_offset] = vars[offsets_.psi_offset];
+    fg[1 + offsets_.v_offset] = vars[offsets_.v_offset];
+    fg[1 + offsets_.cte_offset] = vars[offsets_.cte_offset];
+    fg[1 + offsets_.eps_offset] = vars[offsets_.eps_offset];
 
     // The rest of the constraints
-    for (size_t t = 1; t < N; ++t) {
+    for (size_t t = 1; t < num_steps_; ++t) {
 
-      AD<double> x1 = vars[x_offset + t];
-      AD<double> y1 = vars[y_offset + t];
-      AD<double> psi1 = vars[psi_offset + t];
-      AD<double> v1 = vars[v_offset + t];
-      AD<double> cte1 = vars[cte_offset + t];
-      AD<double> epsi1 = vars[eps_offset + t];
+      AD<double> x1 = vars[offsets_.x_offset + t];
+      AD<double> y1 = vars[offsets_.y_offset + t];
+      AD<double> psi1 = vars[offsets_.psi_offset + t];
+      AD<double> v1 = vars[offsets_.v_offset + t];
+      AD<double> cte1 = vars[offsets_.cte_offset + t];
+      AD<double> epsi1 = vars[offsets_.eps_offset + t];
 
       // The state at time t.
-      AD<double> x0 = vars[x_offset + t - 1];
-      AD<double> y0 = vars[y_offset + t - 1];
-      AD<double> psi0 = vars[psi_offset + t - 1];
-      AD<double> v0 = vars[v_offset + t - 1];
-      AD<double> cte0 = vars[cte_offset + t - 1];
-      AD<double> epsi0 = vars[eps_offset + t - 1];
+      AD<double> x0 = vars[offsets_.x_offset + t - 1];
+      AD<double> y0 = vars[offsets_.y_offset + t - 1];
+      AD<double> psi0 = vars[offsets_.psi_offset + t - 1];
+      AD<double> v0 = vars[offsets_.v_offset + t - 1];
+      AD<double> cte0 = vars[offsets_.cte_offset + t - 1];
+      AD<double> epsi0 = vars[offsets_.eps_offset + t - 1];
 
       // Only consider the actuation at time t.
-      AD<double> delta0 = vars[delta_offset + t - 1];
-      AD<double> a0 = vars[a_offset + t - 1];
+      AD<double> delta0 = vars[offsets_.delta_offset + t - 1];
+      AD<double> a0 = vars[offsets_.a_offset + t - 1];
 
       AD<double> f0 = poly_eval(coeffs, x0);
       AD<double> psides0 = CppAD::atan(coeffs[1]);
@@ -150,14 +133,12 @@ class FG_eval {
       // NOTE: The use of `AD<double>` and use of `CppAD`!
       // This is also CppAD can compute derivatives and pass
       // these to the solver.
-      fg[1 + x_offset + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
-      fg[1 + y_offset + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-      fg[1 + psi_offset + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
-      fg[1 + v_offset + t] = v1 - (v0 + a0 * dt);
-      fg[1 + cte_offset + t] =
-          cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
-      fg[1 + eps_offset + t] =
-          epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
+      fg[1 + offsets_.x_offset   + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt_);
+      fg[1 + offsets_.y_offset   + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt_);
+      fg[1 + offsets_.psi_offset + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt_);
+      fg[1 + offsets_.v_offset   + t] = v1 - (v0 + a0 * dt_);
+      fg[1 + offsets_.cte_offset + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt_));
+      fg[1 + offsets_.eps_offset + t] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt_);
     }
   }
 };
@@ -167,19 +148,19 @@ class FG_eval {
 // MPC_Solution definitions
 //
 double MPC_Solution::GetX(size_t time_step) {
-  return mpc_solution_.x[x_offset + time_step + 1];
+  return mpc_solution_.x[offsets_.x_offset + time_step + 1];
 }
 
 double MPC_Solution::GetY(size_t time_step) {
-  return mpc_solution_.x[y_offset + time_step + 1];
+  return mpc_solution_.x[offsets_.y_offset + time_step + 1];
 }
 
 double MPC_Solution::GetSteerAngle(size_t time_step) {
-  return mpc_solution_.x[psi_offset + time_step + 1];
+  return mpc_solution_.x[offsets_.psi_offset + time_step + 1];
 }
 
 double MPC_Solution::GetThrottle(size_t time_step) {
-  return mpc_solution_.x[a_offset+ time_step + 1];
+  return mpc_solution_.x[offsets_.a_offset+ time_step + 1];
 }
 
 //
@@ -187,7 +168,8 @@ double MPC_Solution::GetThrottle(size_t time_step) {
 //
 MPC::MPC(size_t time_steps, double delta_time):
     time_steps_(time_steps),
-    dt_(delta_time)
+    dt_(delta_time),
+    offsets_(time_steps)
 {
 }
 
@@ -206,8 +188,8 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
 
 
   //Set sizes for used for computation.
-  size_t n_vars = state.SizeAtCompileTime * N + num_actuators * (N - 1);
-  size_t n_constraints = N * num_constraints;
+  size_t n_vars = state.SizeAtCompileTime * time_steps_ + num_actuators * (time_steps_ - 1);
+  size_t n_constraints = time_steps_ * num_constraints;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -217,12 +199,12 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
   }
 
   // Set the initial variable values
-  vars[x_offset] = x;
-  vars[y_offset] = y;
-  vars[psi_offset] = psi;
-  vars[v_offset] = v;
-  vars[cte_offset] = cte;
-  vars[eps_offset] = epsi;
+  vars[offsets_.x_offset] = x;
+  vars[offsets_.y_offset] = y;
+  vars[offsets_.psi_offset] = psi;
+  vars[offsets_.v_offset] = v;
+  vars[offsets_.cte_offset] = cte;
+  vars[offsets_.eps_offset] = epsi;
 
 
   Dvector vars_lowerbound(n_vars);
@@ -231,7 +213,7 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
 
   // Set all non-actuators upper and lowerlimits
   // to the max negative and positive values.
-  for (size_t i = 0; i < delta_offset; i++) {
+  for (size_t i = 0; i < offsets_.delta_offset; i++) {
     vars_lowerbound[i] = -1.0e19;
     vars_upperbound[i] = 1.0e19;
   }
@@ -239,14 +221,14 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
   // The upper and lower limits of delta are set to -25 and 25
   // degrees (values in radians).
   // NOTE: Feel free to change this to something else.
-  for (size_t i = delta_offset; i < a_offset; i++) {
+  for (size_t i = offsets_.delta_offset; i < offsets_.a_offset; i++) {
     vars_lowerbound[i] = -0.436332;
     vars_upperbound[i] = 0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
-  for (size_t i = a_offset; i < n_vars; i++) {
+  for (size_t i = offsets_.a_offset; i < n_vars; i++) {
     vars_lowerbound[i] = -1.0;
     vars_upperbound[i] = 1.0;
   }
@@ -260,23 +242,23 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
     constraints_upperbound[i] = 0;
   }
 
-  constraints_lowerbound[x_offset] = x;
-  constraints_lowerbound[y_offset] = y;
-  constraints_lowerbound[psi_offset] = psi;
-  constraints_lowerbound[v_offset] = v;
-  constraints_lowerbound[cte_offset] = cte;
-  constraints_lowerbound[eps_offset] = epsi;
+  constraints_lowerbound[offsets_.x_offset] = x;
+  constraints_lowerbound[offsets_.y_offset] = y;
+  constraints_lowerbound[offsets_.psi_offset] = psi;
+  constraints_lowerbound[offsets_.v_offset] = v;
+  constraints_lowerbound[offsets_.cte_offset] = cte;
+  constraints_lowerbound[offsets_.eps_offset] = epsi;
 
-  constraints_upperbound[x_offset] = x;
-  constraints_upperbound[y_offset] = y;
-  constraints_upperbound[psi_offset] = psi;
-  constraints_upperbound[v_offset] = v;
-  constraints_upperbound[cte_offset] = cte;
-  constraints_upperbound[eps_offset] = epsi;
+  constraints_upperbound[offsets_.x_offset] = x;
+  constraints_upperbound[offsets_.y_offset] = y;
+  constraints_upperbound[offsets_.psi_offset] = psi;
+  constraints_upperbound[offsets_.v_offset] = v;
+  constraints_upperbound[offsets_.cte_offset] = cte;
+  constraints_upperbound[offsets_.eps_offset] = epsi;
 
 
   // object that computes objective and constraints
-  FG_eval fg_eval(coeffs);
+  FG_eval fg_eval(coeffs, offsets_, time_steps_, dt_);
 
   //
   // NOTE: You don't have to worry about these options
@@ -311,5 +293,5 @@ MPC_Solution MPC::Solve(const TStateVector& state, const TCoeffVector& coeffs) {
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
 
-  return MPC_Solution(solution);
+  return MPC_Solution(solution, offsets_);
 }

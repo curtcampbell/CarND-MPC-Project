@@ -70,7 +70,13 @@ int main() {
   uWS::Hub h;
 
   // MPC is initialized here!
-  MPC mpc(10);
+  ////number of time steps
+  const size_t N = 20;
+
+  //Duration of each time step
+  const double dt = 0.05;
+
+  MPC mpc(N, dt);
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {

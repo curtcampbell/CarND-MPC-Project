@@ -14,7 +14,7 @@ const size_t num_constraints = 6;
 
 // NOTE: feel free to play around with this
 // or do something completely different
-double ref_v = 25;
+double ref_v = 30;
 
 
 // This value assumes the model presented in the classroom is used.

@@ -1,6 +1,11 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+## Rubric Points
+### The Model
+### Timestep Length and Elapsed Duration
+### Polynomial Fitting and MPC Preprocessing
+### Model Predictive Control with Latency
 ---
 
 ## Dependencies
@@ -128,4 +133,3 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-

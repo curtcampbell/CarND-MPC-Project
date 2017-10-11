@@ -113,12 +113,6 @@ int main() {
           double yprime = deriv(coeff, 0.0);
           double epsi = atan(yprime);
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
 
           TStateVector state;
           state << 0, 0, 0, v, cte, epsi;
@@ -129,8 +123,6 @@ int main() {
           double throttle_value = result.GetThrottle(4);
 
           json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 

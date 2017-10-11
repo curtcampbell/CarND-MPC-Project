@@ -3,8 +3,43 @@ Self-Driving Car Engineer Nanodegree Program
 
 ## Rubric Points
 ### The Model
+
+The following equations are used to model the vehical movement.
+
+
+x​t+1​​=x​t​​+v​t​​∗cos(ψ​t​​)∗dt
+
+y​t+1​​=y​t​​+v​t​​∗sin(ψ​t​​)∗dt
+
+ψ​t+1​​=ψ​t​​+​L​f​​​​v​t​​​​∗δ∗dt
+
+v​t+1​​=v​t​​+a​t​​∗dt
+
+  x0, y0  are starting coordinates of the vehical
+  x1, y1  are the coordinates after vehical actuation
+  psi0 is the heading of the vehical
+  psi1 is the heading after actuation.
+  v0 is the starting velocity
+  v1 is the velocity after actualtion
+  cte is the cross track error
+  epsil  
+  x1 = (x0 + v0 * cos(psi0) * dt_
+  y1 = (y0 + v0 * sin(psi0) * dt_);
+  psi1 = (psi0 + v0 * delta0 / Lf * dt_);
+  v1 = (v0 + a0 * dt_);
+  cte1 = ((f0 - y0) + (v0 * sin(epsi0) * dt_));
+  epsi1 = ((psi0 - psides0) + v0 * delta0 / Lf * dt_);
+
 ### Timestep Length and Elapsed Duration
+
+In this project, it was given that there would be a 100 millisecond latency period. I set the timestep
+length by dividing the latency period in half (50 milliseconds).  I felt this would give me the granularity I wanted. I set the total number of time steps
+equal to 10 for a total elapsed time of 1/2 second.  I experimented with 40 and 20 seconds total time but found the
+additional time steps only degraded performance. 
+ 
 ### Polynomial Fitting and MPC Preprocessing
+
+
 ### Model Predictive Control with Latency
 ---
 

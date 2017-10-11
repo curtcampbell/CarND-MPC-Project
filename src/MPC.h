@@ -41,11 +41,11 @@ struct VariableOffsets {
 
 };
 
+template<typename TNum>
+TNum deriv(const TCoeffVector& coeffs, TNum x);
 
-double deriv(const TCoeffVector& coeffs, double x);
-
-double poly_eval(const TCoeffVector& coeffs, double x);
-CppAD::AD<double> poly_eval(const TCoeffVector& coeffs, CppAD::AD<double> x);
+template<typename TNum>
+TNum poly_eval(const TCoeffVector& coeffs, TNum x);
 
 
 class MPC_Solution{

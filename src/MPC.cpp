@@ -14,7 +14,7 @@ const size_t num_constraints = 6;
 
 // NOTE: feel free to play around with this
 // or do something completely different
-double ref_v = 40;
+double ref_v = 25;
 
 
 // This value assumes the model presented in the classroom is used.
@@ -29,6 +29,8 @@ double ref_v = 40;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
+//Specialization for double
+template<>
 double deriv(const TCoeffVector& coeffs, double x) {
   double result = 0.0;
   for (int i = 1; i < coeffs.SizeAtCompileTime; i++) {
@@ -37,6 +39,16 @@ double deriv(const TCoeffVector& coeffs, double x) {
   return result;
 }
 
+template<>
+CppAD::AD<double>  deriv(const TCoeffVector& coeffs, CppAD::AD<double>  x) {
+  CppAD::AD<double>  result = 0.0;
+  for (int i = 1; i < coeffs.SizeAtCompileTime; i++) {
+    result += coeffs[i]* i * CppAD::pow(x, i-1);
+  }
+  return result;
+}
+
+template<>
 double poly_eval(const TCoeffVector& coeffs, double x){
   double result = 0.0;
   for (int i = 0; i < coeffs.SizeAtCompileTime; i++) {
@@ -45,6 +57,7 @@ double poly_eval(const TCoeffVector& coeffs, double x){
   return result;
 }
 
+template<>
 CppAD::AD<double> poly_eval(const TCoeffVector& coeffs, CppAD::AD<double> x){
   CppAD::AD<double> result = 0.0;
   for (int i = 0; i < coeffs.SizeAtCompileTime; i++) {
@@ -141,7 +154,7 @@ class FG_eval {
       AD<double> a0 = vars[offsets_.a_offset + t - 1];
 
       AD<double> f0 = poly_eval(coeffs, x0);
-      AD<double> psides0 = CppAD::atan(coeffs[1]);
+      AD<double> psides0 = CppAD::atan(deriv(coeffs, x0));
 
       //Setup some constraints
       // The idea here is to constraint this value to be 0.

@@ -23,11 +23,17 @@ v​t+1​​=v​t​​+a​t​​∗dt
   v1 is the velocity after actualtion
   cte is the cross track error
   epsil  
+  
   x1 = (x0 + v0 * cos(psi0) * dt_
+  
   y1 = (y0 + v0 * sin(psi0) * dt_);
+  
   psi1 = (psi0 + v0 * delta0 / Lf * dt_);
+  
   v1 = (v0 + a0 * dt_);
+  
   cte1 = ((f0 - y0) + (v0 * sin(epsi0) * dt_));
+  
   epsi1 = ((psi0 - psides0) + v0 * delta0 / Lf * dt_);
 
 ### Timestep Length and Elapsed Duration
@@ -39,7 +45,9 @@ additional time steps only degraded performance.
  
 ### Polynomial Fitting and MPC Preprocessing
 
-
+In order to fit the waypoints, I chose to use a 3rd order polynomial.  This kind of polynomial 
+seems well suited for these kinds of applications.
+  
 ### Model Predictive Control with Latency
 ---
 

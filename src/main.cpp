@@ -101,6 +101,8 @@ int main() {
             double x = waypoints_x[i] - px;
             double y = waypoints_y[i] - py;
 
+            //Convert the waypoints into the vehicle's
+            //coordinate system.
             waypoints_x[i] = x* cos(psi) + y * sin(psi);
             waypoints_y[i] = -x * sin(psi) + y * cos(psi);
 
@@ -119,8 +121,8 @@ int main() {
 
           auto result = mpc.Solve(state, coeff);
 
-          double steer_value = -1 * result.GetSteerAngle(4);
-          double throttle_value = result.GetThrottle(4);
+          double steer_value = -1 * result.GetSteerAngle(3);
+          double throttle_value = result.GetThrottle(3);
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
